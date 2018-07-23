@@ -181,3 +181,7 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+/.vs/NLog.Targets.Sentry/v15/Server/sqlite3/storage.ide-wal
+/.vs/NLog.Targets.Sentry/v15/Server/sqlite3/storage.ide-shm
+/.vs/NLog.Targets.Sentry/v15/Server/sqlite3/storage.ide
+/.vs/NLog.Targets.Sentry/v15/Server/sqlite3/db.lock

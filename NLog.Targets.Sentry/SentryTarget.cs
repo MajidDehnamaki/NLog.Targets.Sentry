@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NLog.Common;
 using NLog.Config;
+using NLog.Targets.Sentry;
 using SharpRaven;
 using SharpRaven.Data;
 
@@ -50,6 +51,15 @@ namespace NLog.Targets
         public bool SendLogEventInfoPropertiesAsTags { get; set; }
 
         /// <summary>
+        /// Gets the fields collection.
+        /// </summary>
+        /// <value>
+        /// The fields.
+        /// </value>
+        [ArrayParameter(typeof(SentryField), "field")]
+        public IList<SentryField> Fields { get; private set; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
         public SentryTarget()
@@ -74,13 +84,10 @@ namespace NLog.Targets
         {
             try
             {
-                var tags = SendLogEventInfoPropertiesAsTags
-                    ? logEvent.Properties.ToDictionary(x => x.Key.ToString(), x => x.Value.ToString())
-                    : null;
+                foreach (var f in Fields)
+                    f.Res = new SentryMessage(f.Layout.Render(logEvent));
 
-                var extras = SendLogEventInfoPropertiesAsTags
-                    ? null
-                    : logEvent.Properties.ToDictionary(x => x.Key.ToString(), x => x.Value.ToString());
+                var field = Fields.ToDictionary(x => x.Name.ToString(), x => x.Res.ToString());
 
                 client.Value.Logger = logEvent.LoggerName;
 
@@ -89,12 +96,20 @@ namespace NLog.Targets
                 if (logEvent.Exception == null && !IgnoreEventsWithNoException)
                 {
                     var sentryMessage = new SentryMessage(Layout.Render(logEvent));
-                    client.Value.CaptureMessage(sentryMessage, LoggingLevelMap[logEvent.Level], extra: extras, tags: tags);
+                    SentryEvent ev = new SentryEvent(sentryMessage);
+                    ev.Tags = field;
+                    ev.Level = LoggingLevelMap[logEvent.Level];
+                    ev.Message = sentryMessage;
+                    client.Value.CaptureAsync(ev);
                 }
                 else if (logEvent.Exception != null)
                 {
                     var sentryMessage = new SentryMessage(logEvent.FormattedMessage);
-                    client.Value.CaptureException(logEvent.Exception, extra: extras, level: LoggingLevelMap[logEvent.Level], message: sentryMessage, tags: tags);
+                    SentryEvent ev = new SentryEvent(logEvent.Exception);
+                    ev.Tags = field;
+                    ev.Level = LoggingLevelMap[logEvent.Level];
+                    ev.Message = sentryMessage;
+                    client.Value.CaptureAsync(ev);
                 }
             }
             catch (Exception e)

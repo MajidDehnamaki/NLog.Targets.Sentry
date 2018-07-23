@@ -17,7 +17,15 @@ To use the Sentry target, simply add it an extension in the NLog.config file and
   </extensions>
 
   <targets>
-    <target name="Sentry" type="Sentry" dsn="<your sentry dsn>"/>
+    <target name="Sentry" type="Sentry" dsn="<your sentry dsn>">
+        <field name="Application"    layout="${machinename}" />
+      <field name="ServerName"     layout="${aspnet-request:serverVariable=SERVER_NAME}" />
+      <field name="Port"           layout="${aspnet-request:serverVariable=SERVER_PORT}" />
+      <field name="Url"            layout="${aspnet-request-url}" />
+      <field name="ServerAddress"  layout="${aspnet-request:serverVariable=LOCAL_ADDR}" />
+      <field name="UserAgent"      layout="${aspnet-Request-UserAgent}" />
+      <field name="QueryString"      layout="${aspnet-Request-QueryString} " />
+      </target>
   </targets>
 
   <rules>
